@@ -1,0 +1,160 @@
+/* ---- Theme tokens ---------------------------------------------------- */
+:root {
+  --bg:        #ffffff;
+  --fg:        #111111;
+  --muted:     #6b6b6b;
+  --border:    #e6e6e6;
+  --card:      #fafafa;
+  --accent:    #111111;
+  --code-bg:   #f4f4f4;
+  --max:       720px;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+:root[data-theme="dark"] {
+  --bg:      #0a0a0a;
+  --fg:      #f2f2f2;
+  --muted:   #9a9a9a;
+  --border:  #262626;
+  --card:    #141414;
+  --accent:  #f2f2f2;
+  --code-bg: #161616;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  line-height: 1.65;
+  font-size: 17px;
+  transition: background .2s ease, color .2s ease;
+}
+
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+/* ---- Header ---------------------------------------------------------- */
+header.site {
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(8px);
+  z-index: 10;
+}
+.nav {
+  display: flex; align-items: center; gap: 22px;
+  height: 60px; max-width: var(--max); margin: 0 auto; padding: 0 24px;
+}
+.brand {
+  font-weight: 700; letter-spacing: -.02em; font-size: 18px;
+  text-decoration: none; color: var(--fg); margin-right: auto;
+  display: inline-flex; align-items: center; gap: 9px;
+}
+.brand .dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--fg); display: inline-block;
+}
+.nav a.link {
+  text-decoration: none; color: var(--muted); font-size: 15px; font-weight: 500;
+}
+.nav a.link:hover, .nav a.link.active { color: var(--fg); }
+
+.theme-toggle {
+  border: 1px solid var(--border); background: var(--card); color: var(--fg);
+  width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1;
+}
+.theme-toggle:hover { border-color: var(--fg); }
+
+/* ---- Hero / intro ---------------------------------------------------- */
+.hero { padding: 64px 0 40px; }
+.hero h1 { font-size: 40px; line-height: 1.1; letter-spacing: -.03em; margin: 0 0 14px; }
+.hero p  { color: var(--muted); font-size: 18px; margin: 0; }
+
+/* ---- Post list ------------------------------------------------------- */
+.posts { list-style: none; padding: 0; margin: 24px 0 80px; }
+.posts li { border-top: 1px solid var(--border); }
+.posts li:last-child { border-bottom: 1px solid var(--border); }
+.posts a {
+  display: flex; align-items: baseline; gap: 16px; justify-content: space-between;
+  padding: 20px 4px; text-decoration: none; color: var(--fg);
+}
+.posts a:hover { background: var(--card); }
+.posts .title { font-weight: 600; font-size: 18px; letter-spacing: -.01em; }
+.posts .desc  { color: var(--muted); font-size: 14px; margin-top: 4px; font-weight: 400; }
+.posts .date  {
+  color: var(--muted); font-family: var(--mono); font-size: 13px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.empty { color: var(--muted); padding: 40px 0; }
+
+/* ---- Article --------------------------------------------------------- */
+article { padding: 48px 0 96px; }
+.post-meta { color: var(--muted); font-family: var(--mono); font-size: 13px; margin-bottom: 8px; }
+article h1 { font-size: 34px; line-height: 1.15; letter-spacing: -.03em; margin: 0 0 28px; }
+article h2 { font-size: 24px; letter-spacing: -.02em; margin: 40px 0 14px; }
+article h3 { font-size: 19px; margin: 30px 0 10px; }
+article p, article li { font-size: 17px; }
+article a { color: var(--fg); text-underline-offset: 3px; }
+article img { border-radius: 10px; border: 1px solid var(--border); }
+article blockquote {
+  margin: 24px 0; padding: 4px 20px; border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+article hr { border: 0; border-top: 1px solid var(--border); margin: 40px 0; }
+article pre {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 18px; overflow-x: auto; font-size: 14px;
+}
+article code { font-family: var(--mono); font-size: .9em; }
+article :not(pre) > code {
+  background: var(--code-bg); padding: 2px 6px; border-radius: 5px;
+  border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 15px; }
+article th, article td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+
+.back { display: inline-block; margin: 40px 0 0; color: var(--muted); text-decoration: none; font-size: 15px; }
+.back:hover { color: var(--fg); }
+
+/* ---- About ----------------------------------------------------------- */
+.about { padding: 56px 0 96px; }
+.about h1 { font-size: 34px; letter-spacing: -.03em; margin: 0 0 20px; }
+.about p { color: var(--fg); }
+.about .lead { font-size: 19px; }
+.about ul { padding-left: 20px; }
+
+/* ---- Footer ---------------------------------------------------------- */
+footer.site {
+  border-top: 1px solid var(--border); color: var(--muted);
+  font-size: 14px; padding: 28px 0; margin-top: 40px;
+}
+footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+footer.site a { color: var(--muted); text-decoration: none; }
+footer.site a:hover { color: var(--fg); }
+
+@media (max-width: 600px) {
+  .hero h1 { font-size: 32px; }
+  .posts a { flex-direction: column; gap: 4px; }
+}
+
+/* ---- Code block + copy button --------------------------------------- */
+.code-block { position: relative; margin: 20px 0; }
+.code-block pre { margin: 0; }
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  font-family: var(--sans); font-size: 12px; line-height: 1;
+  padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  color: var(--muted); background: var(--bg);
+  border: 1px solid var(--border);
+  opacity: 0; transition: opacity .15s ease, color .15s ease, border-color .15s ease;
+}
+.code-block:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+.copy-btn:hover { color: var(--fg); border-color: var(--fg); }
+.copy-btn.copied { color: var(--fg); border-color: var(--fg); }
+@media (hover: none) { .copy-btn { opacity: 1; } }  /* always show on touch */

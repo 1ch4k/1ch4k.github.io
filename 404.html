@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Not found · ich4k</title>
+  <link rel="stylesheet" href="/assets/style.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme") ||
+          (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <header class="site">
+    <nav class="nav">
+      <a class="brand" href="/index.html"><span class="dot"></span>ich4k</a>
+      <a class="link" href="/index.html">Blog</a>
+      <a class="link" href="/about.html">About</a>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">☾</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="about">
+      <h1>Nothing here</h1>
+      <p class="lead">This page does not exist.</p>
+      <p><a href="/index.html">Go back to all posts</a>.</p>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <span>© <span id="year"></span> ich4k</span>
+      <a href="https://github.com/1ch4k" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </footer>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

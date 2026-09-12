@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog · ich4k</title>
+  <meta name="description" content="My personal blog. Notes, reports and things I'm working on." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <script>
+    // set theme before paint to avoid a flash of the wrong theme
+    (function () {
+      try {
+        var t = localStorage.getItem("theme") ||
+          (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <header class="site">
+    <nav class="nav">
+      <a class="brand" href="index.html"><span class="dot"></span>ich4k</a>
+      <a class="link active" href="index.html">Blog</a>
+      <a class="link" href="about.html">About</a>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">☾</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Writing &amp; reports</h1>
+      <p>My personal blog. Notes on what I build, break and read.</p>
+    </section>
+
+    <ul class="posts" id="post-list">
+      <!--POSTS:START-->
+        <li>
+          <a href="posts/how_this_site_works/">
+            <span>
+              <span class="title">How this site works</span>
+              <span class="desc">Why this blog exists and how the whole thing is built and rendered.</span>
+            </span>
+            <span class="date">Sep 12, 2026</span>
+          </a>
+        </li>
+        <!--POSTS:END-->
+    </ul>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <span>© <span id="year"></span> ich4k</span>
+      <a href="https://github.com/1ch4k" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </footer>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
