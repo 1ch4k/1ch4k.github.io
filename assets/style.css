@@ -33,9 +33,15 @@ body {
   line-height: 1.65;
   font-size: 17px;
   transition: background .2s ease, color .2s ease;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
 }
 
-.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+a, a:visited { color: var(--fg); text-underline-offset: 3px; text-decoration-color: var(--muted); }
+a:hover { text-decoration-color: var(--fg); }
+
+.wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 24px; }
 
 /* ---- Header ---------------------------------------------------------- */
 header.site {
@@ -123,16 +129,14 @@ article th, article td { border: 1px solid var(--border); padding: 8px 12px; tex
 .back:hover { color: var(--fg); }
 
 /* ---- About ----------------------------------------------------------- */
-.about { padding: 56px 0 96px; }
-.about h1 { font-size: 34px; letter-spacing: -.03em; margin: 0 0 20px; }
+.about { padding: 0 0 96px; }
 .about p { color: var(--fg); }
-.about .lead { font-size: 19px; }
 .about ul { padding-left: 20px; }
 
 /* ---- Footer ---------------------------------------------------------- */
 footer.site {
   border-top: 1px solid var(--border); color: var(--muted);
-  font-size: 14px; padding: 28px 0; margin-top: 40px;
+  font-size: 14px; padding: 28px 0; margin-top: auto;
 }
 footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 footer.site a { color: var(--muted); text-decoration: none; }
