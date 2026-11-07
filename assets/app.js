@@ -7,7 +7,7 @@
 /* ---- Theme toggle ---------------------------------------------------- */
 function initTheme() {
   const btn = document.getElementById("theme-toggle");
-  let cur = document.documentElement.getAttribute("data-theme") || "light";
+  let cur = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
   const apply = (t) => {
     document.documentElement.setAttribute("data-theme", t);
     if (btn) btn.textContent = t === "dark" ? "☀" : "☾";
@@ -50,6 +50,8 @@ function initCopyButtons() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const year = document.getElementById("year");
+  if (year) year.textContent = String(new Date().getFullYear());
   initTheme();
   initCopyButtons();
 });

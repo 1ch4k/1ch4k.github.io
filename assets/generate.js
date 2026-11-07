@@ -18,7 +18,7 @@
  * ------------------------------------------------------------------ */
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 const { marked } = require(path.join(__dirname, "marked.min.js"));
 
 const ROOT = path.join(__dirname, "..");
@@ -32,14 +32,14 @@ function lastModified(file, meta) {
   // 3) no git             → keep a value already baked in the file
   // 4) nothing else       → fall back to mtime
   try {
-    const dirty = execSync(`git status --porcelain -- "${file}"`, {
+    const dirty = execFileSync("git", ["status", "--porcelain", "--", file], {
       cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
     }).toString().trim();
     if (!dirty) {
-      const iso = execSync(`git log -1 --format=%cI -- "${file}"`, {
+      const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], {
         cwd: ROOT, stdio: ["ignore", "pipe", "ignore"],
       }).toString().trim();
-      if (iso) return iso.slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso.slice(0, 10);
     }
     return fs.statSync(file).mtime.toISOString().slice(0, 10);
   } catch (e) {
@@ -116,10 +116,39 @@ renderer.code = function (code, lang) {
   return `<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button>` +
          `<pre><code${cls}>${esc(code)}</code></pre></div>\n`;
 };
+// Raw HTML in a post is shown as text, never executed (payloads stay inert).
+renderer.html = function (html) {
+  return esc(html);
+};
+
+// Only http(s), mailto and relative links; javascript:, data:, etc. are dropped.
+function safeUrl(href, allowMailto) {
+  const url = String(href || "").replace(/[\u0000-\u0020\u007f]/g, "");
+  const scheme = url.match(/^([a-z][a-z0-9+.-]*):/i);
+  if (!scheme) return url;
+  const s = scheme[1].toLowerCase();
+  if (s === "http" || s === "https" || (allowMailto && s === "mailto")) return url;
+  return null;
+}
+renderer.link = function (href, title, text) {
+  const url = safeUrl(href, true);
+  if (url === null) return text;
+  const external = /^https?:/i.test(url);
+  return `<a href="${esc(url)}"${title ? ` title="${esc(title)}"` : ""}` +
+         `${external ? ' rel="noopener noreferrer"' : ""}>${text}</a>`;
+};
+renderer.image = function (href, title, text) {
+  const url = safeUrl(href, false);
+  if (url === null) return esc(text);
+  return `<img src="${esc(url)}" alt="${esc(text)}"${title ? ` title="${esc(title)}"` : ""} loading="lazy" referrerpolicy="no-referrer" />`;
+};
+
 marked.setOptions({ renderer });
 
 /* ---- page shell for a single post ------------------------------------ */
-const themeScript = `<script>(function(){try{var t=localStorage.getItem("theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>`;
+const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; " +
+            "font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; " +
+            "form-action 'none'; object-src 'none'";
 
 function postPage(post, htmlBody) {
   return `<!doctype html>
@@ -127,11 +156,13 @@ function postPage(post, htmlBody) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="${CSP}" />
+  <meta name="referrer" content="no-referrer" />
   <title>${esc(post.title)} · ich4k</title>
   <meta name="description" content="${esc(post.description)}" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../../assets/style.css" />
-  ${themeScript}
+  <script src="../../assets/theme.js"></script>
 </head>
 <body>
   <header class="site">
@@ -145,7 +176,7 @@ function postPage(post, htmlBody) {
 
   <main class="wrap">
     <article>
-      <div class="post-meta">Last updated ${fmtDate(post.updated)}</div>
+      <div class="post-meta">Last updated ${esc(fmtDate(post.updated))}</div>
       <h1>${esc(post.title)}</h1>
       ${htmlBody}
       <a class="back" href="../../index.html">← All posts</a>
@@ -155,7 +186,7 @@ function postPage(post, htmlBody) {
   <footer class="site">
     <div class="wrap">
       <span>© ${new Date().getFullYear()} ich4k</span>
-      <a href="https://github.com/1ch4k" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/1ch4k" target="_blank" rel="noopener noreferrer">GitHub</a>
     </div>
   </footer>
 
@@ -210,7 +241,7 @@ const list = posts.map((p) => `        <li>
               <span class="title">${esc(p.title)}</span>
               ${p.description ? `<span class="desc">${esc(p.description)}</span>` : ""}
             </span>
-            <span class="date">${fmtDate(p.updated)}</span>
+            <span class="date">${esc(fmtDate(p.updated))}</span>
           </a>
         </li>`).join("\n");
 
